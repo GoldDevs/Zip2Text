@@ -1,4 +1,10 @@
-# Manages real-time event broadcasting (e.g., via Socket.IO).
+"""
+Manages real-time event broadcasting using Flask-SocketIO.
+
+This module provides the EventStreamer class, which is a wrapper around the
+Socket.IO instance. It is used by the backend pipeline to send structured,
+real-time log events to the correct client.
+"""
 
 import logging
 from flask_socketio import SocketIO
@@ -11,7 +17,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class EventStreamer:
     """
-    A handler for formatting and emitting real-time events to clients via Socket.IO.
+    A handler for formatting and emitting real-time events to clients.
+
+    This class abstracts the details of formatting a log event and sending it
+    to a specific Socket.IO room, identified by the job_id.
     """
     def __init__(self, socketio: SocketIO):
         """
@@ -32,15 +41,19 @@ class EventStreamer:
         data: Optional[Dict[str, Any]] = None
     ):
         """
-        Formats an event and emits it to a specific client room.
+        Formats an event and emits it to a specific client room via Socket.IO.
+
+        The event is structured using `format_event` and then broadcast to the
+        room that matches the `job_id`. The client-side application listens for
+        the 'new_log' event to receive these updates.
 
         Args:
             job_id: The unique ID for the job, used as the Socket.IO room.
-            event_name: The machine-readable name of the event.
+            event_name: The machine-readable name of the event (e.g., 'OCR_STARTED').
             status: The status of the event (e.g., 'RUNNING', 'SUCCESS').
-            severity: The severity level of the event.
-            message: A human-readable message.
-            data: Optional dictionary with additional data.
+            severity: The severity level of the event (e.g., Severity.INFO).
+            message: A human-readable message for the log.
+            data: Optional dictionary with additional structured data.
         """
         try:
             # 1. Format the event into a standard structure
@@ -67,7 +80,15 @@ class EventStreamer:
 def create_event_streamer(socketio: SocketIO) -> "EventStreamer":
     """
     Factory function to create an instance of the EventStreamer.
-    This allows passing the instance explicitly, avoiding global state issues
-    with background workers.
+
+    This approach allows the application to create and pass the EventStreamer
+    instance explicitly, which avoids potential issues with global state when
+    using background workers (like eventlet).
+
+    Args:
+        socketio: The active Flask-SocketIO server instance.
+
+    Returns:
+        A new instance of the EventStreamer class.
     """
     return EventStreamer(socketio)

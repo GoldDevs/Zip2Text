@@ -1,15 +1,26 @@
-# Handles ZIP file validation and extraction.
+"""
+Pipeline component for handling ZIP file validation and extraction.
+
+This module is responsible for the first stage of the processing pipeline. It
+ensures that the uploaded file is a valid ZIP archive and then securely
+extracts its contents into a temporary directory for further processing.
+"""
 
 import os
 import zipfile
 import tempfile
 import logging
+import shutil
 from realtime.event_streamer import EventStreamer
 from realtime.log_formatter import Severity
 
 def handle_zip_file(zip_file_path: str, job_id: str, streamer: EventStreamer) -> str:
     """
-    Validates and extracts a ZIP archive, emitting real-time events for each step.
+    Validates and extracts a ZIP archive, emitting real-time events.
+
+    This function first checks if the file is a valid ZIP. If so, it creates
+    a unique temporary directory and extracts the archive's contents into it,
+    emitting events for the start and completion of validation and extraction.
 
     Args:
         zip_file_path: The path to the uploaded .zip file.

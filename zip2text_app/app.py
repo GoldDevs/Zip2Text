@@ -1,4 +1,10 @@
-# Main Flask application file for Zip2Text
+"""
+Main Flask application for the Zip2Text service.
+
+This file sets up the Flask server, configures Socket.IO for real-time communication,
+and defines the routes for the web interface, including file uploads and event streaming.
+It also manages the background task execution for the OCR pipeline.
+"""
 
 # Monkey-patch the standard library for eventlet
 import eventlet
@@ -55,7 +61,17 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """
-    Handles file uploads, saves the file, and starts the OCR pipeline in the background.
+    Handles file uploads, saves the file, and starts the OCR pipeline.
+
+    Expects a POST request with a 'file' part in the multipart/form-data.
+    The file must be a .zip archive.
+
+    On success, it starts a background task for processing and returns a JSON
+    response with the unique job ID.
+    On failure, it returns a JSON error message.
+
+    Returns:
+        Response: A JSON object containing either a 'job_id' or an 'error'.
     """
     if 'file' not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
@@ -92,8 +108,17 @@ def upload_file():
 
 def run_job_and_cleanup(job_id: str, zip_file_path: str, streamer: "EventStreamer"):
     """
-    A wrapper function to run the main job and ensure cleanup happens after.
-    This function is intended to be run in a background thread.
+    A wrapper function to run the main OCR job and ensure cleanup.
+
+    This function is designed to be executed in a background thread started
+    by Socket.IO. It calls the main `run_job` from the pipeline and guarantees
+    that the uploaded temporary file is deleted afterward, regardless of
+    whether the job succeeded or failed.
+
+    Args:
+        job_id: The unique identifier for the processing job.
+        zip_file_path: The absolute path to the uploaded ZIP file.
+        streamer: The EventStreamer instance for real-time communication.
     """
     try:
         # The run_job function now receives the streamer instance directly.
@@ -119,8 +144,14 @@ def handle_disconnect():
 @socketio.on('join')
 def handle_join(data):
     """
-    Handles a client's request to join a room for a specific job.
-    The client should send {'job_id': '...'} after the upload is successful.
+    Handles a client's request to join a real-time event room.
+
+    Clients must send a 'join' event with a 'job_id' to subscribe to
+    the log events for a specific processing job. This ensures that clients
+    only receive events relevant to their own upload.
+
+    Args:
+        data (dict): A dictionary from the client, expected to contain 'job_id'.
     """
     job_id = data.get('job_id')
     if job_id:

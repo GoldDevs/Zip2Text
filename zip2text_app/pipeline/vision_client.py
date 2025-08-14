@@ -1,4 +1,10 @@
-# Client for interacting with the Google Cloud Vision API.
+"""
+Pipeline component for interacting with the Google Cloud Vision API.
+
+This module is responsible for the core OCR task. It initializes the Google
+Cloud Vision client and then iterates through the list of identified images,
+sending each one to the Vision API for text detection.
+"""
 
 import os
 import json
@@ -16,8 +22,12 @@ from realtime.log_formatter import Severity
 def _initialize_vision_client():
     """
     Initializes the Vision API client from environment variables.
+
+    Safely loads credentials from the `GOOGLE_APPLICATION_CREDENTIALS_JSON`
+    environment variable to create an authenticated client instance.
+
     Raises:
-        EnvironmentError: If credentials are not set or invalid.
+        EnvironmentError: If credentials are not set or are invalid.
     """
     credentials_json_str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
     if not credentials_json_str:
@@ -41,16 +51,23 @@ def perform_ocr_on_images(
     """
     Performs OCR on a list of images using the Google Cloud Vision API.
 
+    For each image, it sends a request to the `document_text_detection`
+    endpoint. It handles errors on a per-image basis, meaning that a failure
+    on one image will not stop the processing of others.
+
     Args:
         image_paths: A list of full paths to the image files.
         job_id: The unique ID for this job.
-        streamer: The event streamer instance.
+        streamer: The event streamer instance for real-time updates.
 
     Returns:
-        A dictionary mapping image paths to their OCR text.
+        A dictionary mapping each image path to its extracted OCR text.
+        In case of an error for a specific image, the text will be a
+        placeholder error message.
 
     Raises:
-        EnvironmentError: If the Google Cloud client cannot be initialized.
+        EnvironmentError: If the Google Cloud client cannot be initialized due
+                          to configuration issues. This is a critical failure.
     """
     streamer.emit_event(
         job_id, 'OCR_PIPELINE', 'RUNNING', Severity.INFO,

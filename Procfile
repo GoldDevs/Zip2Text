@@ -1,1 +1,1 @@
-web: gunicorn --workers 1 --threads 8 --timeout 300 app:app
+web: gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app

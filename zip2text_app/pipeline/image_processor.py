@@ -1,4 +1,10 @@
-# Scans for and validates images within the extracted directory.
+"""
+Pipeline component for scanning and validating images.
+
+This module is responsible for traversing the extracted directory from the ZIP
+file, identifying which files are supported images (e.g., JPG, PNG), and
+logging which files are being included or skipped.
+"""
 
 import os
 import logging
@@ -17,13 +23,19 @@ def scan_for_images(
     """
     Scans a directory for images, emitting real-time events for each finding.
 
+    It walks through the directory tree, checks file extensions against a list
+    of supported formats, and collects all valid image paths. It emits events
+    for each image found and each file skipped.
+
     Args:
         extracted_dir_path: The path to the directory to scan.
         job_id: The unique ID for this job.
         streamer: The event streamer instance for sending real-time updates.
 
     Returns:
-        A tuple of (list of sorted image paths, total image count).
+        A tuple containing:
+        - A naturally sorted list of full paths to the found image files.
+        - The total count of images found.
     """
     streamer.emit_event(
         job_id, 'IMAGE_SCAN', 'RUNNING', Severity.INFO,

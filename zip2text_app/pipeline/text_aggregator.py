@@ -1,4 +1,9 @@
-# Aggregates text results from all processed images.
+"""
+Pipeline component for aggregating final text results.
+
+This is the final stage of the OCR pipeline. It takes the text results from
+all processed images and combines them into a single, ordered text block.
+"""
 
 import logging
 from typing import List, Dict
@@ -12,16 +17,22 @@ def aggregate_text_results(
     streamer: EventStreamer
 ) -> str:
     """
-    Aggregates OCR text, emitting real-time events.
+    Aggregates OCR text from multiple images into a single string.
+
+    It iterates through the sorted list of image paths to ensure the final
+    text is in the correct order. It retrieves the OCR text for each path
+    from the results dictionary and joins them.
 
     Args:
-        sorted_image_paths: Sorted list of image paths for correct ordering.
-        ocr_results: Dictionary mapping image paths to OCR text.
+        sorted_image_paths: A list of image paths, sorted in the desired
+                            order for the final output.
+        ocr_results: A dictionary mapping image paths to their OCR text.
         job_id: The unique ID for this job.
         streamer: The event streamer instance.
 
     Returns:
-        A single string containing all aggregated text.
+        A single string containing all aggregated text, with each part
+        separated by double newlines.
     """
     streamer.emit_event(
         job_id, 'AGGREGATION', 'RUNNING', Severity.INFO,

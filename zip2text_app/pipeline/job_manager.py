@@ -1,4 +1,10 @@
-# Manages the entire OCR pipeline from start to finish.
+"""
+Manages the orchestration of the entire OCR processing pipeline.
+
+This module is the main entry point for a new processing job. It calls each of
+the individual pipeline components in the correct order, handles errors that
+may occur during the process, and ensures that cleanup is performed.
+"""
 
 import logging
 import os
@@ -17,6 +23,15 @@ from realtime.log_formatter import Severity
 def run_job(zip_file_path: str, job_id: str, streamer: EventStreamer) -> str:
     """
     Orchestrates the entire Zip-to-Text pipeline, emitting real-time events.
+
+    This function defines the main sequence of operations for an OCR job:
+    1. Emit a 'JOB_STARTED' event.
+    2. Unzip the file using `handle_zip_file`.
+    3. Scan for images using `scan_for_images`.
+    4. Perform OCR on images using `perform_ocr_on_images`.
+    5. Aggregate results with `aggregate_text_results`.
+    6. Emit a 'JOB_COMPLETED' or 'JOB_FAILED' event.
+    It also ensures that the temporary directory is cleaned up.
 
     Args:
         zip_file_path: The path to the uploaded .zip file.
