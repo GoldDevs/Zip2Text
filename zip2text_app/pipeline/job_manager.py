@@ -11,25 +11,27 @@ from pipeline.vision_client import perform_ocr_on_images
 from pipeline.text_aggregator import aggregate_text_results
 
 # Import real-time components
-from realtime.event_streamer import event_streamer # Use the initialized global instance
+from realtime.event_streamer import EventStreamer
 from realtime.log_formatter import Severity
 
-def run_job(zip_file_path: str, job_id: str) -> str:
+def run_job(zip_file_path: str, job_id: str, streamer: EventStreamer) -> str:
     """
     Orchestrates the entire Zip-to-Text pipeline, emitting real-time events.
 
     Args:
         zip_file_path: The path to the uploaded .zip file.
         job_id: A unique identifier for this job.
+        streamer: An initialized EventStreamer instance.
 
     Returns:
         The final aggregated text or an error message.
     """
-    if not event_streamer:
-        logging.error("Event streamer is not initialized!")
+    if not streamer:
+        logging.error(f"[{job_id}] Event streamer was not provided to run_job!")
+        # We can't emit a failure event here, so we just return. The job will hang.
         return "Error: Server configuration issue."
 
-    event_streamer.emit_event(
+    streamer.emit_event(
         job_id=job_id,
         event_name='JOB_STARTED',
         status='RUNNING',
@@ -40,13 +42,13 @@ def run_job(zip_file_path: str, job_id: str) -> str:
     extracted_dir = None
     try:
         # Pass job_id and streamer to each pipeline step
-        extracted_dir = handle_zip_file(zip_file_path, job_id, event_streamer)
+        extracted_dir = handle_zip_file(zip_file_path, job_id, streamer)
 
-        image_paths, image_count = scan_for_images(extracted_dir, job_id, event_streamer)
+        image_paths, image_count = scan_for_images(extracted_dir, job_id, streamer)
 
         if image_count == 0:
             message = "Process complete. No supported image files (.jpg, .png, .webp) were found."
-            event_streamer.emit_event(
+            streamer.emit_event(
                 job_id=job_id,
                 event_name='JOB_WARNING',
                 status='COMPLETED',
@@ -55,11 +57,11 @@ def run_job(zip_file_path: str, job_id: str) -> str:
             )
             return message
 
-        ocr_results = perform_ocr_on_images(image_paths, job_id, event_streamer)
+        ocr_results = perform_ocr_on_images(image_paths, job_id, streamer)
 
-        final_text = aggregate_text_results(image_paths, ocr_results, job_id, event_streamer)
+        final_text = aggregate_text_results(image_paths, ocr_results, job_id, streamer)
 
-        event_streamer.emit_event(
+        streamer.emit_event(
             job_id=job_id,
             event_name='JOB_COMPLETED',
             status='SUCCESS',
@@ -71,15 +73,15 @@ def run_job(zip_file_path: str, job_id: str) -> str:
 
     except ValueError as e:
         error_message = f"A validation error occurred: {e}"
-        event_streamer.emit_event(
+        streamer.emit_event(
             job_id=job_id, event_name='JOB_FAILED', status='FAILED',
             severity=Severity.ERROR, message=error_message
         )
         return f"Error: {e}"
     except Exception as e:
         error_message = f"An unexpected error occurred: {e}"
-        logging.error(error_message, exc_info=True)
-        event_streamer.emit_event(
+        logging.error(f"[{job_id}] {error_message}", exc_info=True)
+        streamer.emit_event(
             job_id=job_id, event_name='JOB_FAILED', status='FAILED',
             severity=Severity.ERROR, message="An unexpected server error occurred."
         )

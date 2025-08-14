@@ -62,13 +62,12 @@ class EventStreamer:
         except Exception as e:
             logging.error(f"Failed to emit event to room {job_id}: {e}")
 
-# A global instance that can be initialized by the main app
-# This is a simple approach. In larger apps, Flask's app context might be used.
-event_streamer: Optional[EventStreamer] = None
+# The global instance pattern is removed in favor of dependency injection.
 
-def initialize_event_streamer(socketio: SocketIO):
-    """Initializes the global event streamer instance."""
-    global event_streamer
-    if not event_streamer:
-        event_streamer = EventStreamer(socketio)
-    return event_streamer
+def create_event_streamer(socketio: SocketIO) -> "EventStreamer":
+    """
+    Factory function to create an instance of the EventStreamer.
+    This allows passing the instance explicitly, avoiding global state issues
+    with background workers.
+    """
+    return EventStreamer(socketio)

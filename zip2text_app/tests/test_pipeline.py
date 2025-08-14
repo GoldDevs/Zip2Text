@@ -105,10 +105,6 @@ class TestPipeline(unittest.TestCase):
     @patch('pipeline.job_manager.perform_ocr_on_images')
     def test_run_job_full_success(self, mock_perform_ocr):
         """Integration test for a successful job run."""
-        # This requires monkey-patching the global event_streamer used by job_manager
-        import pipeline.job_manager
-        pipeline.job_manager.event_streamer = self.mock_streamer
-
         # A more robust mock that generates text based on input filenames
         def ocr_side_effect(image_paths, job_id, streamer):
             results = {}
@@ -126,7 +122,8 @@ class TestPipeline(unittest.TestCase):
         }
         zip_path = self._create_dummy_zip('full_test.zip', files)
 
-        final_text = run_job(zip_path, 'job5')
+        # Pass the mock streamer directly to the function
+        final_text = run_job(zip_path, 'job5', self.mock_streamer)
 
         # Check that the mocked vision client was called
         mock_perform_ocr.assert_called_once()
@@ -141,13 +138,10 @@ class TestPipeline(unittest.TestCase):
 
     def test_run_job_no_images(self):
         """Test a job where the zip file contains no supported images."""
-        import pipeline.job_manager
-        pipeline.job_manager.event_streamer = self.mock_streamer
-
         files = {'doc.txt': 'text', 'archive.dat': 'data'}
         zip_path = self._create_dummy_zip('no_images.zip', files)
 
-        result_message = run_job(zip_path, 'job6')
+        result_message = run_job(zip_path, 'job6', self.mock_streamer)
 
         self.assertIn("No supported image files", result_message)
         self.mock_streamer.emit_event.assert_any_call(

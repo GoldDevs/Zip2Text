@@ -1,11 +1,37 @@
-# MOCKED client for interacting with the Google Cloud Vision API.
+# Client for interacting with the Google Cloud Vision API.
 
 import os
+import json
 import logging
-import time
 from typing import List, Dict
+
+# Import Google Cloud libraries
+from google.cloud import vision
+from google.oauth2 import service_account
+
+# Import project components
 from realtime.event_streamer import EventStreamer
 from realtime.log_formatter import Severity
+
+def _initialize_vision_client():
+    """
+    Initializes the Vision API client from environment variables.
+    Raises:
+        EnvironmentError: If credentials are not set or invalid.
+    """
+    credentials_json_str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    if not credentials_json_str:
+        raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is not set.")
+
+    try:
+        credentials_info = json.loads(credentials_json_str)
+        credentials = service_account.Credentials.from_service_account_info(credentials_info)
+        client = vision.ImageAnnotatorClient(credentials=credentials)
+        logging.info("Google Cloud Vision client initialized successfully for this job.")
+        return client
+    except Exception as e:
+        logging.critical(f"Failed to initialize Google Vision client: {e}")
+        raise EnvironmentError(f"Failed to initialize Google Vision client: {e}")
 
 def perform_ocr_on_images(
     image_paths: List[str],
@@ -13,7 +39,7 @@ def perform_ocr_on_images(
     streamer: EventStreamer
 ) -> Dict[str, str]:
     """
-    MOCKED: Simulates performing OCR, emitting real-time events.
+    Performs OCR on a list of images using the Google Cloud Vision API.
 
     Args:
         image_paths: A list of full paths to the image files.
@@ -21,12 +47,26 @@ def perform_ocr_on_images(
         streamer: The event streamer instance.
 
     Returns:
-        A dictionary mapping image paths to their mocked OCR text.
+        A dictionary mapping image paths to their OCR text.
+
+    Raises:
+        EnvironmentError: If the Google Cloud client cannot be initialized.
     """
     streamer.emit_event(
         job_id, 'OCR_PIPELINE', 'RUNNING', Severity.INFO,
         f"Starting OCR process for {len(image_paths)} images..."
     )
+
+    try:
+        client = _initialize_vision_client()
+    except EnvironmentError as e:
+        # This is a critical failure. The job cannot proceed.
+        streamer.emit_event(
+            job_id, 'OCR_PIPELINE', 'FAILED', Severity.ERROR,
+            f"Configuration error: Could not initialize Vision API. Please check server credentials. Error: {e}"
+        )
+        # Re-raise the exception to be caught by the job manager, which will terminate the job.
+        raise
 
     ocr_results = {}
     total_images = len(image_paths)
@@ -40,15 +80,18 @@ def perform_ocr_on_images(
             data={'filename': filename, 'current': i+1, 'total': total_images}
         )
 
-        # Simulate network latency and processing time of an API call
-        time.sleep(1.5)
-
-        # In a real scenario, you would add try/except blocks here for API errors
         try:
-            # MOCKED RESPONSE
-            mocked_text = f"--- Page: {filename} ---\nThis is the simulated OCR text content for the image '{filename}'.\n"
+            with open(image_path, "rb") as image_file:
+                content = image_file.read()
 
-            ocr_results[image_path] = mocked_text
+            image = vision.Image(content=content)
+            response = client.document_text_detection(image=image)
+
+            if response.error.message:
+                raise Exception(response.error.message)
+
+            text = response.full_text_annotation.text
+            ocr_results[image_path] = text
 
             streamer.emit_event(
                 job_id, 'OCR_SUCCESS', 'SUCCESS', Severity.SUCCESS,
@@ -56,12 +99,17 @@ def perform_ocr_on_images(
                 data={'filename': filename}
             )
         except Exception as e:
-            # This block would handle real API call failures
+            # Handle failure for a single image, but continue with the rest.
+            error_message = f"Could not process image {filename} with Vision API: {e}"
+            logging.error(f"[{job_id}] {error_message}")
             streamer.emit_event(
                 job_id, 'OCR_FAILED', 'FAILED', Severity.ERROR,
-                f"({i+1}/{total_images}) Failed to process: {filename}",
+                f"({i+1}/{total_images}) Failed to process: {filename}. Error: {e}",
                 data={'filename': filename, 'error': str(e)}
             )
+            # Add a placeholder to the results so the aggregator knows it failed.
+            ocr_results[image_path] = f"[Error processing {filename}: See server logs for details]"
+
 
     streamer.emit_event(
         job_id, 'OCR_PIPELINE', 'SUCCESS', Severity.SUCCESS,
