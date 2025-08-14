@@ -1,0 +1,232 @@
+{
+  "project_name": "Zip2Text Real-time OCR Web App",
+  "version": "1.5.0",
+  "description": "A highly interactive web application that extracts text from images within a ZIP file, providing a live, step-by-step log of the entire OCR process.",
+  "target_environment": {
+    "primary": "Modern Web Browsers on any OS (Desktop & Mobile)",
+    "backend_platform": ["Render", "Kinsta", "or other PaaS"],
+    "python_version": "3.9+",
+    "dependencies": ["Flask", "gunicorn", "google-cloud-vision", "Pillow", "Flask-SocketIO or SSE library"]
+  },
+  "architecture": {
+    "design_pattern": "Client-Server with Asynchronous Task Processing and Real-time Event Streaming",
+    "ui_paradigm": "Single-Page Application (SPA) with a Live Event Feed/Log",
+    "realtime_protocol": "WebSockets or Server-Sent Events (SSE) for unidirectional server-to-client updates",
+    "state_management": "Client-side state for UI; server-side for background job management"
+  },
+  "core_modules": {
+    "ocr_pipeline_engine": {
+      "description": "The core asynchronous pipeline for processing uploaded ZIP files. Each step emits a real-time event.",
+      "components": {
+        "job_manager": {
+          "file": "pipeline/job_manager.py",
+          "responsibilities": [
+            "Accept new upload jobs",
+            "Assign a unique job ID",
+            "Emit 'JOB_STARTED' event",
+            "Orchestrate pipeline steps",
+            "Emit 'JOB_COMPLETED' or 'JOB_FAILED' event"
+          ]
+        },
+        "zip_handler": {
+          "file": "pipeline/zip_handler.py",
+          "responsibilities": [
+            "Validate uploaded file is a valid ZIP",
+            "Emit 'VALIDATION_SUCCESS' or 'VALIDATION_FAILED' event",
+            "Securely extract archive to a temporary directory",
+            "Emit 'EXTRACTION_STARTED' and 'EXTRACTION_COMPLETED' events",
+            "Log and emit an event for each individual file extracted"
+          ]
+        },
+        "image_processor": {
+          "file": "pipeline/image_processor.py",
+          "responsibilities": [
+            "Scan the extracted directory for supported image formats",
+            "Emit 'IMAGE_SCAN_STARTED' event",
+            "Log and emit 'IMAGE_FOUND' event for each valid image",
+            "Log and emit 'FILE_SKIPPED' event for non-image files",
+            "Emit 'IMAGE_SCAN_COMPLETED' with a total count"
+          ]
+        },
+        "google_vision_client": {
+          "file": "pipeline/vision_client.py",
+          "responsibilities": [
+            "Iterate through found images",
+            "For each image, emit 'OCR_STARTED' event with filename",
+            "Make API call to Google Cloud Vision",
+            "Handle API errors and retries, emitting events for each",
+            "Emit 'OCR_SUCCESS' or 'OCR_FAILED' event with filename"
+          ]
+        },
+        "text_aggregator": {
+          "file": "pipeline/text_aggregator.py",
+          "responsibilities": [
+            "Collect OCR text results from all successful pages",
+            "Emit 'AGGREGATION_STARTED' event",
+            "Assemble final text output with page separators",
+            "Emit 'AGGREGATION_COMPLETED' event with the final payload"
+          ]
+        }
+      }
+    },
+    "realtime_framework": {
+      "description": "Manages the real-time communication link between the server backend and the user's browser.",
+      "components": {
+        "event_streamer": {
+          "file": "realtime/event_streamer.py",
+          "responsibilities": [
+            "Provide a simple interface for pipeline components to send events",
+            "Broadcast events to the correct client using their job ID",
+            "Manage the WebSocket/SSE connection lifecycle"
+          ]
+        },
+        "log_formatter": {
+          "file": "realtime/log_formatter.py",
+          "responsibilities": [
+            "Standardize event data into a consistent JSON structure",
+            "Assign severity levels (INFO, SUCCESS, WARNING, ERROR)",
+            "Generate human-readable log messages",
+            "Add timestamps to every event"
+          ]
+        }
+      }
+    },
+    "web_interface": {
+      "description": "The Flask-based web server and frontend assets.",
+      "components": {
+        "app_routes": {
+          "file": "app.py",
+          "responsibilities": [
+            "Serve the main HTML page",
+            "Provide an endpoint for file uploads",
+            "Handle WebSocket/SSE connection requests"
+          ]
+        },
+        "frontend_assets": {
+          "directory": "static/",
+          "responsibilities": [
+            "Contain the core JavaScript for handling uploads and real-time events",
+            "Contain the CSS for styling the UI components",
+            "Manage images or fonts for the UI"
+          ]
+        }
+      }
+    }
+  },
+  "screen_definitions": {
+    "main_interface_screen": {
+      "file": "templates/index.html",
+      "description": "The single, unified interface for the entire user workflow.",
+      "components": [
+        "File Upload Card with Drag-and-Drop zone",
+        "Real-time Process Log Panel",
+        "Overall Progress Bar",
+        "Final Text Output Card",
+        "Action Buttons (Copy Text, Download .txt, Start Over)"
+      ],
+      "features": [
+        "Interactive file selection and drag-and-drop",
+        "Live-updating log that displays each atomic step from the server",
+        "Log messages styled by severity (e.g., green for success, red for error)",
+        "Final text appears automatically upon job completion",
+        "One-click actions for using the generated text"
+      ]
+    }
+  },
+  "feature_specifications": {
+    "core_features": {
+      "realtime_logging": {
+        "priority": "critical",
+        "description": "Display every step of the OCR process to the user in real-time.",
+        "acceptance_criteria": [
+          "A log entry appears instantly (<500ms) after a server-side event occurs",
+          "Every file extraction, image scan, and OCR API call is logged",
+          "Logs clearly indicate success, failure, or warnings",
+          "The UI remains responsive and interactive while logs are streaming"
+        ]
+      },
+      "zip_to_text_pipeline": {
+        "priority": "critical",
+        "description": "End-to-end processing of a ZIP file to a final text output.",
+        "acceptance_criteria": [
+          "Accepts .zip files up to 50MB",
+          "Correctly identifies and processes .jpg, .png, .webp images",
+          "Handles archives with nested directories",
+          "Aggregates text from all pages in natural sort order"
+        ]
+      }
+    },
+    "ui_features": {
+      "intuitive_workflow": {
+        "priority": "high",
+        "description": "A seamless and self-explanatory user experience.",
+        "acceptance_criteria": [
+          "User can complete the entire task without instructions",
+          "Clear visual feedback for all interactions (e.g., file selected, upload in progress)",
+          "The state of the app (uploading, processing, done) is always obvious"
+        ]
+      },
+      "mobile_responsiveness": {
+        "priority": "high",
+        "description": "The application is fully usable on mobile devices.",
+        "acceptance_criteria": [
+          "Layout adapts gracefully to small screens",
+          "Tap targets are large enough for touch",
+          "Log panel is scrollable and readable on mobile"
+        ]
+      }
+    }
+  },
+  "performance_requirements": {
+    "processing_time": {
+      "target": "< 60 seconds for a 10-page, 20MB ZIP file",
+      "measurement": "Time from upload completion to final text display"
+    },
+    "realtime_latency": {
+      "target": "< 500ms between server event and client UI update",
+      "measurement": "Time differential between server log timestamp and browser render time"
+    },
+    "memory_usage": {
+      "target": "Server memory usage remains stable under concurrent loads",
+      "measurement": "Peak memory usage per worker process"
+    }
+  },
+  "deployment_configuration": {
+    "file_structure": {
+      "root_directory": "zip2text_app/",
+      "subdirectories": {
+        "pipeline/": "Core OCR processing modules",
+        "realtime/": "WebSocket/SSE management",
+        "static/": "CSS, JavaScript, images",
+        "templates/": "HTML files",
+        "tests/": "Unit and integration tests"
+      },
+      "entry_point": "app.py"
+    },
+    "configuration_files": {
+      "runtime": "requirements.txt",
+      "process_manager": "Procfile"
+    }
+  },
+  "future_enhancements": {
+    "phase_2_features": [
+      "Support for more archive formats (RAR, 7z)",
+      "Allow direct multi-image upload (without zipping)",
+      "Option to select OCR language",
+      "User accounts to save job history",
+      "Shareable links to results"
+    ]
+  },
+  "success_metrics": {
+    "user_experience": [
+      "High rating on the clarity and usefulness of the real-time log",
+      "Low bounce rate after file upload (users wait to see the process)",
+      "Task completion success rate > 98%"
+    ],
+    "technical_performance": [
+      "API error rate from Google Vision < 1%",
+      "Average real-time event latency stays below target",
+      "Successful processing of a wide variety of ZIP file structures"
+    ]
+  }
+}
