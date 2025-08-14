@@ -34,8 +34,8 @@ The application uses a client-server architecture built with Python, Flask, and 
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/GoldDevs/Zip2Text
+    cd zip2text
     ```
 
 2.  **Create and activate a virtual environment:**
