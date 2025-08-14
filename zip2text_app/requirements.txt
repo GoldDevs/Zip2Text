@@ -1,6 +1,0 @@
-Flask
-gunicorn
-google-cloud-vision
-Pillow
-Flask-SocketIO
-eventlet

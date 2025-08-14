@@ -34,8 +34,8 @@ The application uses a client-server architecture built with Python, Flask, and 
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/GoldDevs/Zip2Text
-    cd zip2text
+    git clone <repository-url>
+    cd <repository-directory>
     ```
 
 2.  **Create and activate a virtual environment:**
@@ -46,9 +46,9 @@ The application uses a client-server architecture built with Python, Flask, and 
     ```
 
 3.  **Install dependencies:**
-    The application's dependencies are listed in `zip2text_app/requirements.txt`.
+    The application's dependencies are listed in `requirements.txt`.
     ```bash
-    pip install -r zip2text_app/requirements.txt
+    pip install -r requirements.txt
     ```
 
 ## Configuration
@@ -110,7 +110,7 @@ The deployment process for any PaaS provider will follow these three core steps:
     web: gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app
     ```
 
-2.  **Install Dependencies:** The platform will automatically find the `zip2text_app/requirements.txt` file and install all the necessary Python packages during the build process.
+2.  **Install Dependencies:** The platform will automatically find the `requirements.txt` file in the project root and install all the necessary Python packages during the build process.
 
 3.  **Configure Environment Variables:** This is the most critical step. The application requires your Google Cloud credentials. You must provide them to the PaaS as a secure environment variable, **not** by committing the key file to your repository.
     - In your PaaS provider's dashboard, find the "Environment Variables" or "Config Vars" section.
@@ -170,7 +170,7 @@ Render offers a user-friendly interface for deploying web services.
     - **Root Directory:** Leave this blank if your `Procfile` is in the root.
     - **Environment:** Select `Python 3`.
     - **Region:** Choose a region close to you.
-    - **Build Command:** `pip install -r zip2text_app/requirements.txt` (Render usually detects this automatically).
+    - **Build Command:** `pip install -r requirements.txt` (Render usually detects this automatically).
     - **Start Command:** `gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app` (Render will pre-fill this from the `Procfile`).
 
 5.  **Add the Environment Variable:**
