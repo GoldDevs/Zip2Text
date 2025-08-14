@@ -1,0 +1,202 @@
+/* --- Global Styles & Variables --- */
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --secondary-color: #6c757d;
+    --secondary-hover: #5a6268;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --error-color: #dc3545;
+    --info-color: #17a2b8;
+    --light-gray: #f8f9fa;
+    --medium-gray: #e9ecef;
+    --dark-gray: #343a40;
+    --font-family-sans: 'Roboto', sans-serif;
+    --font-family-mono: 'Roboto Mono', monospace;
+}
+
+body {
+    font-family: var(--font-family-sans);
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
+    margin: 0;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    border-bottom: 2px solid var(--medium-gray);
+    padding-bottom: 0.5rem;
+    margin-top: 0;
+}
+
+/* --- Card Layout --- */
+.card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* --- Buttons --- */
+.button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.button {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.button:hover {
+    background-color: var(--primary-hover);
+}
+
+.button.secondary {
+    background-color: var(--secondary-color);
+}
+
+.button.secondary:hover {
+    background-color: var(--secondary-hover);
+}
+
+/* --- Upload Section --- */
+#drop-zone {
+    border: 3px dashed var(--medium-gray);
+    border-radius: 8px;
+    padding: 3rem;
+    text-align: center;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+#drop-zone.drag-over {
+    border-color: var(--primary-color);
+    background-color: #f0f8ff;
+}
+
+#drop-zone p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+#file-input {
+    display: none; /* Hide the default input */
+}
+
+#upload-status {
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* --- Progress Bar --- */
+.progress-bar-container {
+    width: 100%;
+    background-color: var(--medium-gray);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+#progress-bar {
+    height: 20px;
+    background-color: var(--primary-color);
+    width: 0%;
+    transition: width 0.4s ease-in-out;
+    text-align: center;
+    color: white;
+    line-height: 20px;
+}
+
+/* --- Log Panel --- */
+#log-panel {
+    background-color: var(--dark-gray);
+    color: #f1f1f1;
+    font-family: var(--font-family-mono);
+    padding: 1.5rem;
+    border-radius: 5px;
+    height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.log-entry {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.log-entry .timestamp { color: #999; margin-right: 1rem; }
+.log-entry .severity { font-weight: 700; margin-right: 1rem; }
+
+.log-severity-INFO { color: #ffffff; }
+.log-severity-SUCCESS { color: #28a745; }
+.log-severity-WARNING { color: #ffc107; }
+.log-severity-ERROR { color: #dc3545; }
+.log-severity-DEBUG { color: #6c757d; }
+
+
+/* --- Results Section --- */
+#results-card .action-buttons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+#final-text-output {
+    width: 100%;
+    height: 300px;
+    font-family: var(--font-family-mono);
+    padding: 1rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: 5px;
+    resize: vertical;
+}
+
+/* --- Footer --- */
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--secondary-color);
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+    .container {
+        padding: 0;
+    }
+    h1 {
+        font-size: 2rem;
+    }
+}

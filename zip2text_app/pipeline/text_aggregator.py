@@ -1,0 +1,47 @@
+# Aggregates text results from all processed images.
+
+import logging
+from typing import List, Dict
+from realtime.event_streamer import EventStreamer
+from realtime.log_formatter import Severity
+
+def aggregate_text_results(
+    sorted_image_paths: List[str],
+    ocr_results: Dict[str, str],
+    job_id: str,
+    streamer: EventStreamer
+) -> str:
+    """
+    Aggregates OCR text, emitting real-time events.
+
+    Args:
+        sorted_image_paths: Sorted list of image paths for correct ordering.
+        ocr_results: Dictionary mapping image paths to OCR text.
+        job_id: The unique ID for this job.
+        streamer: The event streamer instance.
+
+    Returns:
+        A single string containing all aggregated text.
+    """
+    streamer.emit_event(
+        job_id, 'AGGREGATION', 'RUNNING', Severity.INFO,
+        "Aggregating text from all processed images..."
+    )
+
+    final_text_parts = []
+    for image_path in sorted_image_paths:
+        text = ocr_results.get(image_path)
+        if text:
+            final_text_parts.append(text)
+        else:
+            logging.warning(f"[{job_id}] Could not find OCR result for {image_path} during aggregation.")
+
+    # Join with a double newline for clear separation between pages.
+    final_text_output = "\n\n".join(final_text_parts)
+
+    streamer.emit_event(
+        job_id, 'AGGREGATION', 'SUCCESS', Severity.SUCCESS,
+        "Text aggregation complete."
+    )
+
+    return final_text_output
