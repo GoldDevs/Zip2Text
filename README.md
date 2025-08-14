@@ -97,6 +97,90 @@ gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app
 
 This will start the server on the default port (usually 8000).
 
+## Deployment to Cloud Platforms (PaaS)
+
+This application is designed for easy deployment to any modern Platform as a Service (PaaS) that supports Python applications (e.g., **Heroku**, **Render**, **Google App Engine**, **AWS Elastic Beanstalk**).
+
+### Core Deployment Concepts
+
+The deployment process for any PaaS provider will follow these three core steps:
+
+1.  **Define the Process:** The `Procfile` in the repository root tells the platform how to run the application. It is already configured to use the production-ready `gunicorn` server with the correct settings for a real-time Socket.IO application.
+    ```
+    web: gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app
+    ```
+
+2.  **Install Dependencies:** The platform will automatically find the `zip2text_app/requirements.txt` file and install all the necessary Python packages during the build process.
+
+3.  **Configure Environment Variables:** This is the most critical step. The application requires your Google Cloud credentials. You must provide them to the PaaS as a secure environment variable, **not** by committing the key file to your repository.
+    - In your PaaS provider's dashboard, find the "Environment Variables" or "Config Vars" section.
+    - Create a new variable with the exact name `GOOGLE_APPLICATION_CREDENTIALS_JSON`.
+    - For the value, paste the **entire content** of your downloaded JSON key file.
+
+### Deployment Examples
+
+Below are step-by-step examples for two popular platforms, Heroku and Render.
+
+---
+
+#### Example 1: Deploying to Heroku
+
+Heroku uses the `Procfile` and a git-based workflow.
+
+1.  **Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)** and log in:
+    ```bash
+    heroku login
+    ```
+
+2.  **Create a Heroku app:** This command creates a new application and a `heroku` git remote.
+    ```bash
+    heroku create your-unique-app-name
+    ```
+
+3.  **Set the Google Cloud credentials:**
+    ```bash
+    heroku config:set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat /path/to/your/credentials.json)"
+    ```
+    *(Note: The command above securely sends the file content to Heroku without saving it in your shell history.)*
+
+4.  **Deploy the application:** Push the code to Heroku.
+    ```bash
+    git push heroku main
+    ```
+
+5.  **Open the app:**
+    ```bash
+    heroku open
+    ```
+
+---
+
+#### Example 2: Deploying to Render
+
+Render offers a user-friendly interface for deploying web services.
+
+1.  **Push your code to a GitHub repository.**
+
+2.  **Create a new "Web Service" on the [Render Dashboard](https://dashboard.render.com/).**
+
+3.  **Connect your repository:** Grant Render access and select your project repository.
+
+4.  **Configure the service:**
+    - **Name:** Give your service a name (e.g., `zip2text-app`).
+    - **Root Directory:** Leave this blank if your `Procfile` is in the root.
+    - **Environment:** Select `Python 3`.
+    - **Region:** Choose a region close to you.
+    - **Build Command:** `pip install -r zip2text_app/requirements.txt` (Render usually detects this automatically).
+    - **Start Command:** `gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app` (Render will pre-fill this from the `Procfile`).
+
+5.  **Add the Environment Variable:**
+    - Go to the "Environment" tab for your new service.
+    - Click "Add Environment Variable".
+    - Set the **Key** to `GOOGLE_APPLICATION_CREDENTIALS_JSON`.
+    - Paste the **entire content** of your Google Cloud JSON key file into the **Value** field.
+
+6.  **Create the Web Service:** Click the "Create Web Service" button. Render will automatically build and deploy your application.
+
 ## How to Use
 
 1.  Open your web browser and navigate to the application's URL.
