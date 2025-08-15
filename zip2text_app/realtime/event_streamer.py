@@ -10,7 +10,7 @@ import logging
 from flask_socketio import SocketIO
 from typing import Optional, Dict, Any
 
-from realtime.log_formatter import format_event, Severity
+from .log_formatter import format_event, Severity
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

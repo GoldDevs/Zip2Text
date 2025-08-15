@@ -7,8 +7,8 @@ all processed images and combines them into a single, ordered text block.
 
 import logging
 from typing import List, Dict
-from realtime.event_streamer import EventStreamer
-from realtime.log_formatter import Severity
+from ..realtime.event_streamer import EventStreamer
+from ..realtime.log_formatter import Severity
 
 def aggregate_text_results(
     sorted_image_paths: List[str],

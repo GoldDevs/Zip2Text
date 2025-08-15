@@ -11,8 +11,8 @@ import zipfile
 import tempfile
 import logging
 import shutil
-from realtime.event_streamer import EventStreamer
-from realtime.log_formatter import Severity
+from ..realtime.event_streamer import EventStreamer
+from ..realtime.log_formatter import Severity
 
 def handle_zip_file(zip_file_path: str, job_id: str, streamer: EventStreamer) -> str:
     """

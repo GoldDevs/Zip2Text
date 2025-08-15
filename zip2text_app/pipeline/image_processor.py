@@ -9,8 +9,8 @@ logging which files are being included or skipped.
 import os
 import logging
 from typing import List, Tuple
-from realtime.event_streamer import EventStreamer
-from realtime.log_formatter import Severity
+from ..realtime.event_streamer import EventStreamer
+from ..realtime.log_formatter import Severity
 
 # Supported image formats as per the specification
 SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.webp'}

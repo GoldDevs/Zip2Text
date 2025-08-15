@@ -11,14 +11,14 @@ import os
 import shutil
 
 # Import pipeline components
-from pipeline.zip_handler import handle_zip_file
-from pipeline.image_processor import scan_for_images
-from pipeline.vision_client import perform_ocr_on_images
-from pipeline.text_aggregator import aggregate_text_results
+from .zip_handler import handle_zip_file
+from .image_processor import scan_for_images
+from .vision_client import perform_ocr_on_images
+from .text_aggregator import aggregate_text_results
 
 # Import real-time components
-from realtime.event_streamer import EventStreamer
-from realtime.log_formatter import Severity
+from ..realtime.event_streamer import EventStreamer
+from ..realtime.log_formatter import Severity
 
 def run_job(zip_file_path: str, job_id: str, streamer: EventStreamer) -> str:
     """

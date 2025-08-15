@@ -18,8 +18,8 @@ from flask_socketio import SocketIO, join_room
 from werkzeug.utils import secure_filename
 
 # Import pipeline and real-time components
-from pipeline.job_manager import run_job
-from realtime.event_streamer import create_event_streamer
+from .pipeline.job_manager import run_job
+from .realtime.event_streamer import create_event_streamer
 
 from logging.handlers import RotatingFileHandler
 

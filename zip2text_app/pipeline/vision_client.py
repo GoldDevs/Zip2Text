@@ -16,8 +16,8 @@ from google.cloud import vision
 from google.oauth2 import service_account
 
 # Import project components
-from realtime.event_streamer import EventStreamer
-from realtime.log_formatter import Severity
+from ..realtime.event_streamer import EventStreamer
+from ..realtime.log_formatter import Severity
 
 def _initialize_vision_client():
     """

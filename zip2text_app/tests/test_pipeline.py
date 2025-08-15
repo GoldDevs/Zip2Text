@@ -5,19 +5,16 @@ import shutil
 import zipfile
 from unittest.mock import MagicMock
 
-# Add the project root to the python path to allow imports
+# Add the project root to the python path to allow imports from the 'zip2text_app' package
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import the modules to be tested
-from pipeline.zip_handler import handle_zip_file
-from pipeline.image_processor import scan_for_images
-from pipeline.text_aggregator import aggregate_text_results
-from pipeline.job_manager import run_job
+from zip2text_app.pipeline.zip_handler import handle_zip_file
+from zip2text_app.pipeline.image_processor import scan_for_images
+from zip2text_app.pipeline.text_aggregator import aggregate_text_results
+from zip2text_app.pipeline.job_manager import run_job
 from unittest.mock import patch
-
-# We need to mock the vision client as it has time.sleep and external dependencies
-from pipeline import vision_client
 
 
 class TestPipeline(unittest.TestCase):
@@ -102,7 +99,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn('Text from page 2.', final_text)
         self.assertTrue(final_text.find('Text from page 1.') < final_text.find('Text from page 2.'))
 
-    @patch('pipeline.job_manager.perform_ocr_on_images')
+    @patch('zip2text_app.pipeline.job_manager.perform_ocr_on_images')
     def test_run_job_full_success(self, mock_perform_ocr):
         """Integration test for a successful job run."""
         # A more robust mock that generates text based on input filenames
