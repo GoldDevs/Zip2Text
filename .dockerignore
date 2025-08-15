@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+
+# Python
+__pycache__/
+*.pyc
+
+# PHP application files
+src/
+public/
+templates/
+tests/
+composer.json
+composer.lock
+phpunit.xml
+worker.php
+Procfile
+
+# Logs
+*.log
+
+# Test assets
+test_images.zip
+
+# Other
+curl_output.json
+create_test_zip.py
+specifications.json
