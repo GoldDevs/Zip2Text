@@ -1,0 +1,8 @@
+# Composer dependencies
+/vendor/
+
+# Application data and logs
+/uploads/
+/jobs/
+/logs/
+*.log

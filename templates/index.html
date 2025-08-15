@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zip2Text Real-time OCR (PHP/Material Design)</title>
+
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header class="center-align">
+            <h1>Zip2Text Real-time OCR</h1>
+            <p class="flow-text">Upload a .zip file with images and watch the text extraction happen live.</p>
+        </header>
+
+        <main id="main-content">
+            <!-- Step 1: Upload Card -->
+            <div class="card" id="upload-card">
+                <div class="card-content">
+                    <span class="card-title">1. Upload Your .zip File</span>
+                    <div id="drop-zone" class="grey lighten-4 center-align">
+                        <i class="large material-icons">cloud_upload</i>
+                        <p>Drag & Drop your file here or click the button below</p>
+                        <br>
+                        <input type="file" id="file-input" accept=".zip" class="hide">
+                        <label for="file-input" class="btn waves-effect waves-light">
+                            Select File <i class="material-icons right">attach_file</i>
+                        </label>
+                    </div>
+                    <div id="upload-status" class="center-align"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Processing Log -->
+            <div class="card" id="processing-card" style="display: none;">
+                <div class="card-content">
+                    <span class="card-title">2. Processing Live Log</span>
+                    <div class="progress">
+                        <div id="progress-bar" class="determinate" style="width: 0%;"></div>
+                    </div>
+                    <div class="black white-text" style="padding: 15px; border-radius: 5px; height: 400px; overflow-y: auto;">
+                        <pre id="log-panel" style="margin: 0; white-space: pre-wrap;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Results -->
+            <div class="card" id="results-card" style="display: none;">
+                <div class="card-content">
+                    <span class="card-title">3. Extracted Text</span>
+                    <textarea id="final-text-output" class="materialize-textarea" readonly></textarea>
+                    <div class="card-action">
+                        <button id="copy-button" class="btn waves-effect waves-light">Copy<i class="material-icons right">content_copy</i></button>
+                        <button id="download-button" class="btn waves-effect waves-light">Download<i class="material-icons right">file_download</i></button>
+                        <button id="start-over-button" class="btn-flat waves-effect">Start Over</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="center-align grey-text">
+            <p>Powered by PHP &amp; Server-Sent Events</p>
+        </footer>
+    </div>
+
+    <!-- Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <!-- Custom App Logic -->
+    <script src="/script.js"></script>
+</body>
+</html>

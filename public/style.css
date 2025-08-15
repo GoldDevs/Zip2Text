@@ -1,0 +1,74 @@
+/* --- Custom Styles to complement Materialize --- */
+
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    background-color: #f4f4f4; /* A light grey background */
+}
+
+main {
+    flex: 1 0 auto;
+    padding: 20px 0;
+}
+
+header h1 {
+    font-size: 3rem;
+}
+
+/* --- Upload Card --- */
+#drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    padding: 40px 20px;
+    transition: all 0.3s ease;
+}
+
+#drop-zone.drag-over {
+    border-color: #26a69a; /* Materialize teal */
+    background-color: #e0f2f1; /* A light teal */
+}
+
+#upload-status {
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* --- Log Panel --- */
+#log-panel {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.log-entry {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.log-entry .timestamp { color: #9e9e9e; margin-right: 1rem; } /* Materialize grey */
+.log-entry .severity { font-weight: 700; margin-right: 1rem; }
+
+.log-severity-INFO { color: #ffffff; }
+.log-severity-SUCCESS { color: #4caf50; } /* Materialize green */
+.log-severity-WARNING { color: #ffc107; } /* Materialize amber */
+.log-severity-ERROR { color: #f44336; } /* Materialize red */
+.log-severity-DEBUG { color: #bdbdbd; } /* Materialize grey lighten-1 */
+
+/* --- Results Card --- */
+#final-text-output {
+    height: 300px;
+    font-family: 'Roboto Mono', monospace;
+    color: #333;
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.card .card-action button {
+    margin-right: 10px;
+}
+
+footer {
+    padding: 20px 0;
+}

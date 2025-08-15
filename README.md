@@ -1,32 +1,40 @@
-# Zip2Text Real-time OCR Web App
+# Zip2Text Real-time OCR (PHP Version)
 
-Zip2Text is a highly interactive web application that extracts text from images contained within a ZIP file. It provides a live, step-by-step log of the entire OCR process, from file upload to the final text aggregation, using real-time events.
+This project is a PHP port of the original Zip2Text Python application. It is a secure, modern web application that extracts text from images contained within a ZIP file, providing a live, step-by-step log of the entire OCR process using Server-Sent Events (SSE).
+
+The project is structured as a standard Composer package, making its components potentially reusable.
 
 ## Key Features
 
-- **Real-time Progress Logging:** Watch every step of the process (validation, extraction, image scanning, OCR) as it happens.
+- **Real-time Progress Logging:** Watch every step of the process (validation, extraction, image scanning, OCR) as it happens using SSE.
 - **ZIP File Support:** Upload a single `.zip` file containing multiple images.
 - **Drag & Drop Interface:** Modern, easy-to-use interface for uploading files.
 - **Google Cloud Vision OCR:** Utilizes Google's powerful Vision API for high-quality text extraction.
-- **Asynchronous Pipeline:** The backend processing is fully asynchronous, ensuring the UI remains responsive.
-- **Mobile Responsive:** The interface is designed to be usable on both desktop and mobile devices.
+- **Asynchronous Job Queue:** The backend processing is handled by a background worker, ensuring the UI remains responsive and can handle long-running tasks.
+- **Secure by Design:** Follows security best practices, such as validating uploads, using secure file paths, and preventing directory traversal.
 
 ## Architecture Overview
 
-The application uses a client-server architecture built with Python, Flask, and Flask-SocketIO.
+The application uses a client-server architecture built with vanilla PHP and JavaScript.
 
-- **Backend:** The Flask application serves the main web page and handles the initial file upload. Upon receiving a file, it spawns a background task to handle the processing pipeline.
-- **Real-time Communication:** [Flask-SocketIO](https://flask-socketio.readthedocs.io/) is used with an `eventlet` worker to stream log events from the server to the client in real-time. Each job is assigned a unique room to ensure clients only see their own logs.
-- **OCR Pipeline:** The processing pipeline is a series of modules that are executed in order:
-    1.  `zip_handler`: Validates and extracts the uploaded ZIP file.
-    2.  `image_processor`: Scans the extracted files for supported image types.
-    3.  `vision_client`: Sends the images to the Google Cloud Vision API.
-    4.  `text_aggregator`: Collects the OCR results into a final text document.
-- **Frontend:** A vanilla JavaScript single-page application that communicates with the backend via HTTP (for uploads) and WebSockets (for real-time logs). It dynamically updates the DOM to show the live log and final results.
+- **Frontend:** A single-page vanilla JavaScript application that communicates with the backend via:
+    - **HTTP (`fetch`):** For uploading the initial ZIP file.
+    - **Server-Sent Events (`EventSource`):** For receiving a one-way stream of log events from the server in real-time.
+- **Backend:** The backend is composed of two main parts:
+    1.  **Public Endpoints:** Simple PHP scripts in the `public/` directory (`upload.php`, `events.php`) that handle web requests.
+    2.  **Background Worker:** A long-running command-line script (`worker.php`) that polls a file-based job queue.
+- **Asynchronous Processing:** When a file is uploaded, `upload.php` creates a "job file" in the `jobs/` directory. The `worker.php` script picks up this job and executes the pipeline, ensuring that long-running OCR tasks do not block web requests.
+- **OCR Pipeline (`src/`):** The processing pipeline is a series of PHP classes executed by the `JobManager`:
+    - `ZipHandler`: Validates and extracts the uploaded ZIP file.
+    - `ImageProcessor`: Scans the extracted files for supported image types.
+    - `VisionClient`: Sends the images to the Google Cloud Vision API.
+    - `TextAggregator`: Collects the OCR results into a final text document.
+    - `EventLogger`: Writes structured logs that are streamed by the `events.php` endpoint.
 
 ## Prerequisites
 
-- Python 3.9+
+- PHP 8.0+ with the following extensions: `zip`, `curl`, `gd`, `mbstring`, `intl`.
+- Composer for dependency management.
 - A Google Cloud Platform (GCP) project with the **Cloud Vision API** enabled.
 - Billing enabled for your GCP project.
 
@@ -38,17 +46,9 @@ The application uses a client-server architecture built with Python, Flask, and 
     cd <repository-directory>
     ```
 
-2.  **Create and activate a virtual environment:**
+2.  **Install dependencies:**
     ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    # On Windows, use: venv\Scripts\activate
-    ```
-
-3.  **Install dependencies:**
-    The application's dependencies are listed in `requirements.txt`.
-    ```bash
-    pip install -r requirements.txt
+    composer install
     ```
 
 ## Configuration
@@ -73,126 +73,37 @@ This application requires Google Cloud credentials to use the Vision API.
     $env:GOOGLE_APPLICATION_CREDENTIALS_JSON='<paste-the-entire-content-of-your-json-file-here>'
     ```
 
-    **Note:** Do not commit your credentials file to version control.
+    **Note:** Do not commit your credentials file to version control. The `.gitignore` file is already configured to ignore application data directories (`uploads`, `jobs`, `logs`).
 
 ## How to Run
 
-### Development Mode
+Running this application requires two components: a web server to serve the frontend and a background worker to process the jobs.
 
-For local development, you can run the Flask-SocketIO development server directly. This provides live reloading and debugging information.
+### 1. Run the Background Worker
 
-```bash
-python zip2text_app/app.py
-```
-
-The application will be available at `http://127.0.0.1:5001`.
-
-### Production Mode
-
-For production, it is recommended to use the `gunicorn` WSGI server, as configured in the `Procfile`.
+Open a terminal and run the following command from the project root. This script will run continuously, waiting for new jobs to process.
 
 ```bash
-gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app
+php worker.php
+```
+In a production environment, you should use a process manager like `supervisor` or `systemd` to keep this worker running permanently.
+
+### 2. Run the Web Server
+
+You need to serve the `public/` directory with a web server. The easiest way to do this for local development is to use PHP's built-in web server.
+
+Open a **second terminal** and run this command from the project root:
+
+```bash
+php -S localhost:8000 -t public
 ```
 
-This will start the server on the default port (usually 8000).
-
-## Deployment to Cloud Platforms (PaaS)
-
-This application is designed for easy deployment to any modern Platform as a Service (PaaS) that supports Python applications (e.g., **Heroku**, **Render**, **Google App Engine**, **AWS Elastic Beanstalk**).
-
-### Core Deployment Concepts
-
-The deployment process for any PaaS provider will follow these three core steps:
-
-1.  **Define the Process:** The `Procfile` in the repository root tells the platform how to run the application. It is already configured to use the production-ready `gunicorn` server with the correct settings for a real-time Socket.IO application.
-    ```
-    web: gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app
-    ```
-
-2.  **Install Dependencies:** The platform will automatically find the `requirements.txt` file in the project root and install all the necessary Python packages during the build process.
-
-3.  **Configure Environment Variables:** This is the most critical step. The application requires your Google Cloud credentials. You must provide them to the PaaS as a secure environment variable, **not** by committing the key file to your repository.
-    - In your PaaS provider's dashboard, find the "Environment Variables" or "Config Vars" section.
-    - Create a new variable with the exact name `GOOGLE_APPLICATION_CREDENTIALS_JSON`.
-    - For the value, paste the **entire content** of your downloaded JSON key file.
-
-### Deployment Examples
-
-Below are step-by-step examples for two popular platforms, Heroku and Render.
-
----
-
-#### Example 1: Deploying to Heroku
-
-Heroku uses the `Procfile` and a git-based workflow.
-
-1.  **Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)** and log in:
-    ```bash
-    heroku login
-    ```
-
-2.  **Create a Heroku app:** This command creates a new application and a `heroku` git remote.
-    ```bash
-    heroku create your-unique-app-name
-    ```
-
-3.  **Set the Google Cloud credentials:**
-    ```bash
-    heroku config:set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat /path/to/your/credentials.json)"
-    ```
-    *(Note: The command above securely sends the file content to Heroku without saving it in your shell history.)*
-
-4.  **Deploy the application:** Push the code to Heroku.
-    ```bash
-    git push heroku main
-    ```
-
-5.  **Open the app:**
-    ```bash
-    heroku open
-    ```
-
----
-
-#### Example 2: Deploying to Render
-
-Render offers a user-friendly interface for deploying web services.
-
-1.  **Push your code to a GitHub repository.**
-
-2.  **Create a new "Web Service" on the [Render Dashboard](https://dashboard.render.com/).**
-
-3.  **Connect your repository:** Grant Render access and select your project repository.
-
-4.  **Configure the service:**
-    - **Name:** Give your service a name (e.g., `zip2text-app`).
-    - **Root Directory:** Leave this blank if your `Procfile` is in the root.
-    - **Environment:** Select `Python 3`.
-    - **Region:** Choose a region close to you.
-    - **Build Command:** `pip install -r requirements.txt` (Render usually detects this automatically).
-    - **Start Command:** `gunicorn --worker-class eventlet -w 1 --log-level info zip2text_app.app:app` (Render will pre-fill this from the `Procfile`).
-
-5.  **Add the Environment Variable:**
-    - Go to the "Environment" tab for your new service.
-    - Click "Add Environment Variable".
-    - Set the **Key** to `GOOGLE_APPLICATION_CREDENTIALS_JSON`.
-    - Paste the **entire content** of your Google Cloud JSON key file into the **Value** field.
-
-6.  **Create the Web Service:** Click the "Create Web Service" button. Render will automatically build and deploy your application.
+The application will be available at `http://localhost:8000`. You will need to create a `public/index.php` file to serve the `templates/index.html` file.
 
 ## How to Use
 
-1.  Open your web browser and navigate to the application's URL.
+1.  Open your web browser and navigate to `http://localhost:8000`.
 2.  Drag and drop a `.zip` file containing your images onto the upload area, or use the "Select File" button.
 3.  The upload will start automatically. Once uploaded, the live log panel will appear.
 4.  Watch as the application validates, extracts, and processes each image.
-5.  When the process is complete, the final extracted text will appear in the results card. You can then copy the text or download it as a `.txt` file.
-
-## Running Tests
-
-The project includes a suite of unit tests for the backend pipeline. To run the tests:
-
-```bash
-python zip2text_app/tests/test_pipeline.py
-```
+5.  When the process is complete, the final extracted text will appear in the results card.
